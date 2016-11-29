@@ -1,0 +1,6 @@
+[report]
+include =
+    src/infoporto/*
+omit =
+    */test*
+    */upgrades/*

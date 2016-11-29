@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<registry>
+
+        <record name="infoporto.push_api_key">
+          <field type="plone.registry.field.TextLine">
+            <title>Firebase Cloud Message API key</title>
+            <description>API KEY for your Firebase Cloud Message API key</description>
+            <required>False</required>
+          </field>
+          <value>1234</value>
+        </record>
+
+</registry>
