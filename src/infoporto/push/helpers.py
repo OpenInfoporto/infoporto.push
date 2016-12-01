@@ -7,6 +7,36 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class PushDevice:
+
+    def __init__(self, token, platform, user):
+        self.token = token
+        self.platform = platform
+        self.user = user
+
+        registry = getUtility(IRegistry)
+        self.device_location = registry['infoporto.devices_location']
+
+    def register(self):
+        container = api.content.get(path=self.device_location)
+        existings = api.content.find(portal_type='Device', Title=self.token)
+
+        if existings:
+            logger.warning("Found %s devices with same token... deleting... " % len(existings))
+            api.content.delete(objects=[o.getObject() for o in existings])
+
+        obj = api.content.create(
+            type='Device',
+            title=self.token,
+            token=self.token,
+            platform=self.platform,
+            user=self.user,
+            container=container)
+
+        api.content.transition(obj=obj, transition='submit')
+
+        return obj
+
 class PushMessage:
 
     def __init__(self, token_list, title, body=None, badge=None):
@@ -17,7 +47,7 @@ class PushMessage:
         
         registry = getUtility(IRegistry)
         self.push_service = FCMNotification(api_key=registry['infoporto.push_api_key'])
-        logger.debug(registry['infoporto.push_api_key'])
+        self.push_locations = registry['infoporto.push_location'] or '/push/'
 
     def send(self):
         logger.info("Sending push to %s" % self.token_list)
@@ -27,8 +57,7 @@ class PushMessage:
         logger.debug(result)
 
     def queue(self):
-        
-        container = api.content.get(path='/push')
+        container = api.content.get(path=self.push_locations)
 
         for token in self.token_list:
             obj = api.content.create(

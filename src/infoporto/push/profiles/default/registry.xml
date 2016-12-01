@@ -10,4 +10,22 @@
           <value>1234</value>
         </record>
 
+        <record name="infoporto.push_location">
+          <field type="plone.registry.field.TextLine">
+            <title>Infoporto PUSH location</title>
+            <description>Set the folder where you want to store push messages.</description>
+            <required>False</required>
+          </field>
+          <value>/push/</value>
+        </record>
+
+        <record name="infoporto.devices_location">
+          <field type="plone.registry.field.TextLine">
+            <title>Infoporto DEVICE location</title>
+            <description>Set the folder where you want to store registered mobile devices for push notifications.</description>
+            <required>False</required>
+          </field>
+          <value>/devices/</value>
+        </record>
+
 </registry>
