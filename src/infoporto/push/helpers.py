@@ -19,8 +19,8 @@ class PushDevice:
 
     def register(self):
         container = api.content.get(path=self.device_location)
-        existings = api.content.find(portal_type='Device', Title=self.token)
-
+        existings = api.content.find(portal_type='Device', Creator=self.user.get)
+        
         if existings:
             logger.warning("Found %s devices with same token... deleting... " % len(existings))
             api.content.delete(objects=[o.getObject() for o in existings])
@@ -30,7 +30,6 @@ class PushDevice:
             title=self.token,
             token=self.token,
             platform=self.platform,
-            user=self.user,
             container=container)
 
         api.content.transition(obj=obj, transition='submit')
@@ -57,6 +56,7 @@ class PushMessage:
         logger.debug(result)
 
     def queue(self):
+        print self.push_locations
         container = api.content.get(path=self.push_locations)
 
         for token in self.token_list:

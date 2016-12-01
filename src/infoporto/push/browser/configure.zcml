@@ -25,4 +25,13 @@
       permission="zope2.View"
       />
 
+
+  <browser:page
+      name="pushqueue"
+      for="*"
+      layer="zope.interface.Interface"
+      class=".api.PushQueueView"
+      permission="zope2.View"
+      />
+
 </configure>
