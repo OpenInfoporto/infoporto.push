@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
-<object name="Device" meta_type="Dexterity FTI" i18n:domain="infoporto.push"
+<object name="PushMessage" meta_type="Dexterity FTI" i18n:domain="infoporto.push"
    xmlns:i18n="http://xml.zope.org/namespaces/i18n">
-  <property name="title" i18n:translate="">Device</property>
+  <property name="title" i18n:translate="">PushMessage</property>
   <property name="description"
     i18n:translate=""></property>
   <property name="icon_expr"></property>
-  <property name="factory">Device</property>
-  <property name="add_view_expr">string:${folder_url}/++add++Device</property>
+  <property name="factory">PushMessage</property>
+  <property name="add_view_expr">string:${folder_url}/++add++PushMessage</property>
   <property name="link_target"></property>
   <property name="immediate_view">view</property>
   <property name="global_allow">True</property>
@@ -25,7 +25,7 @@
     <element value="plone.app.content.interfaces.INameFromTitle"/>
     <element value="collective.dexteritytextindexer.behavior.IDexterityTextIndexer" />
   </property>
-  <property name="schema">infoporto.push.interfaces.IDevice</property>
+  <property name="schema">infoporto.push.interfaces.IPushMessage</property>
   <property name="model_source"></property>
   <property name="model_file"></property>
   <alias from="(Default)" to="(dynamic view)"/>

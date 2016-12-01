@@ -48,6 +48,7 @@ setup(
         'z3c.jbot',
         'plone.app.dexterity',
         'pyfcm',
+        'collective.dexteritytextindexer',
     ],
     extras_require={
         'test': [
