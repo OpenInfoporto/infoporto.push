@@ -19,22 +19,22 @@ class PushDevice:
 
     def register(self):
         container = api.content.get(path=self.device_location)
-        existings = api.content.find(portal_type='Device', Creator=self.user.get)
-        
-        if existings:
-            logger.warning("Found %s devices with same token... deleting... " % len(existings))
-            api.content.delete(objects=[o.getObject() for o in existings])
+        api.content.delete(objects=[o.getObject() for o in api.content.find(portal_type='Device',
+                                                                            owner=self.user.id,
+                                                                            container=container)])
 
         obj = api.content.create(
             type='Device',
-            title=self.token,
+            title="%s device (%s)" % (self.user.id, self.platform),
             token=self.token,
+            owner=self.user.id,
             platform=self.platform,
             container=container)
 
         api.content.transition(obj=obj, transition='submit')
 
         return obj
+
 
 class PushMessage:
 
@@ -69,4 +69,10 @@ class PushMessage:
                     container=container)
 
             logger.info("Push %s for %s added to queue" % (obj.id, token))
+
+    def set_recipient(self, username):
+        registry = getUtility(IRegistry)
+        container = api.content.get(path=registry['infoporto.devices_location'])
+        devices = api.content.find(portal_type='Device', owner=username, container=container)
+        self.token_list = [d.getObject().token for d in devices]
 

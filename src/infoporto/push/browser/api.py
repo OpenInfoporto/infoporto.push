@@ -1,7 +1,8 @@
 import logging
 import json
 
-from zope.component import getUtility                                                                    
+from pyfcm.errors import AuthenticationError
+from zope.component import getUtility
 from plone.registry.interfaces import IRegistry
 
 from Products.Five.browser import BrowserView
@@ -24,14 +25,41 @@ class DevicesView(BrowserView):
         device_helper = PushDevice(token, body.get('platform'), api.user.get_current())
         device = device_helper.register()
 
-        message = PushMessage([token], "Welcome!")
-        message.send()
-        logger.info("Notifications to %s added to queue" % token)
+        try:
+            message = PushMessage([token], "Welcome!")
+            message.send()
+            logger.info("Notifications to %s added to queue" % token)
 
-        pretty = json.dumps(dict(message="Device registered!"), sort_keys=True)
-        self.request.response.setHeader("Content-type", "application/json")
-    
-        return pretty
+            response = json.dumps(dict(message="Device registered!"), sort_keys=True)
+            self.request.response.setHeader("Content-type", "application/json")
+        except AuthenticationError, e:
+            logger.error(e)
+            response = json.dumps(dict(message="Error sending welcome notification"))
+
+        return response
+
+
+class PushTestView(BrowserView):
+
+    def __call__(self):
+        username = api.user.get_current().getUserName()
+
+        body = self.request.get('BODY')
+        body = json.loads(body)
+        recipient_user = body.get('recipient')
+
+        logger.info('calling test push by user %s to user %s...' % (username, recipient_user))
+
+        message = PushMessage([], body.get('title'))
+        message.set_recipient(recipient_user)
+
+        try:
+            message.send()
+        except Exception, e:
+            logger.error(e)
+            return json.dumps(dict(message=e))
+
+        return json.dumps(dict(message="Message sent to %s." % message.token_list))
 
 
 class PushQueueView(BrowserView):

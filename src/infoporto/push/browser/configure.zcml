@@ -34,4 +34,12 @@
       permission="zope2.View"
       />
 
+  <browser:page
+      name="push-test"
+      for="*"
+      layer="zope.interface.Interface"
+      class=".api.PushTestView"
+      permission="zope2.View"
+      />
+
 </configure>

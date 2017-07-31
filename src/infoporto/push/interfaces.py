@@ -41,6 +41,12 @@ class IDevice(Interface):
         required=False
     )
 
+    dexteritytextindexer.searchable('owner')
+    owner = schema.TextLine(
+        title=_(u"owner"),
+        required=False
+    )
+
 
 states = SimpleVocabulary(
     [SimpleTerm(value=u'OUTGOING', title=_(u'Outgoing')),
