@@ -26,7 +26,7 @@ class DevicesView(BrowserView):
         device = device_helper.register()
 
         try:
-            message = PushMessage([token], "Welcome!")
+            message = PushMessage([token], "Welcome!", "Welcome body!")
             message.send()
             logger.info("Notifications to %s added to queue" % token)
 
@@ -50,7 +50,9 @@ class PushTestView(BrowserView):
 
         logger.info('calling test push by user %s to user %s...' % (username, recipient_user))
 
-        message = PushMessage([], body.get('title'))
+        data_message = dict(UID="66fa7286ebb2488e9f94644f95c81e96")
+
+        message = PushMessage([], "titolo", "Testmaela", data_message=data_message)
         message.set_recipient(recipient_user)
 
         try:
