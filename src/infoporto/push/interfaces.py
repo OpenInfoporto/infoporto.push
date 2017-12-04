@@ -50,6 +50,7 @@ class IDevice(Interface):
 
 states = SimpleVocabulary(
     [SimpleTerm(value=u'OUTGOING', title=_(u'Outgoing')),
+     SimpleTerm(value=u'READ', title=_(u'Read')),
      SimpleTerm(value=u'SENT', title=_(u'Sent')),]
 )
 
@@ -78,3 +79,7 @@ class IPushMessage(Interface):
         default='OUTGOING'
     )
 
+    extra = schema.Text(
+        title=_(u"extra"),
+        default=u"{}"
+    )

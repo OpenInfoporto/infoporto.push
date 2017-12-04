@@ -34,6 +34,16 @@
       permission="zope2.View"
       />
 
+
+  <browser:page
+      name="read-notification"
+      for="*"
+      layer="zope.interface.Interface"
+      class=".api.ReadNotification"
+      permission="zope2.View"
+      />
+
+
   <browser:page
       name="push-test"
       for="*"
