@@ -36,6 +36,7 @@ class IDevice(Interface):
         required=False
     )
 
+    dexteritytextindexer.searchable('platform')
     platform = schema.Text(
         title=_(u"platform"),
         required=False

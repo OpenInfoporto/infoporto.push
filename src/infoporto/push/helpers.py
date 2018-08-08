@@ -22,11 +22,10 @@ class PushDevice:
 
     def register(self):
         container = api.content.get(path=self.device_location)
-        
         api.content.delete(objects=[o.getObject() for o in api.content.find(portal_type='Device',
                                                                             owner=self.user.id,
+                                                                            token=self.token,
                                                                             container=container)])
-
         obj = api.content.create(
             type='Device',
             title="%s device (%s)" % (self.user.id, self.platform),
@@ -57,17 +56,21 @@ class PushMessage:
 
     def send(self):
         logger.info("Sending push to %s" % self.token_list)
-        logger.debug(self.extra_kwargs)
+        logger.info("Title: %s Badge: %s User: %s" % (self.title, self.badge, self.username))
+        logger.info(self.extra_kwargs)
+
         if not self.title:
-            self.push_service.notify_multiple_devices(registration_ids=self.token_list, badge=self.badge)
+            result = self.push_service.notify_multiple_devices(registration_ids=self.token_list, badge=self.badge, content_available=True)
         else:
             result = self.push_service.notify_multiple_devices(registration_ids=self.token_list, 
                                                                message_title=self.title, 
                                                                message_body=self.body,
                                                                data_message=self.data_message,
-                                                               badge=self.badge)
+                                                               badge=self.badge,
+                                                               sound='Default',
+                                                               content_available=True)
 
-            logger.debug(result)
+        logger.debug(result)
 
     def queue(self):
         container = api.content.get(path=self.push_locations)
@@ -86,11 +89,15 @@ class PushMessage:
             obj.reindexObject()
             logger.info("Push %s for %s added to queue" % (obj.id, token))
 
-    def set_recipient(self, username):
+    def set_recipient(self, username, platform=None):
         registry = getUtility(IRegistry)
         self.username = username
         container = api.content.get(path=registry['infoporto.devices_location'])
-        devices = api.content.find(portal_type='Device', owner=username, container=container)
+        if platform:
+            devices = api.content.find(portal_type='Device', owner=username, container=container, platform=platform)
+        else:
+            devices = api.content.find(portal_type='Device', owner=username, container=container)        
+
         logger.debug("Found %s devices for user %s" % (len(devices), username))
         self.token_list = [d.getObject().token for d in devices]
 

@@ -16,12 +16,12 @@ class DevicesView(BrowserView):
 
     def __call__(self):
         username = api.user.get_current().getUserName()
-        logger.info('calling devices registrations by user %s...' % username)
 
         body = self.request.get('BODY')
         body = json.loads(body)
         token = body.get('token')
 
+        logger.info('calling devices registrations %s by user %s providing token %s' % (body.get('platform'), username, token))
         device_helper = PushDevice(token, body.get('platform'), api.user.get_current())
         device = device_helper.register()
 
@@ -81,7 +81,7 @@ class PushQueueView(BrowserView):
             # TODO: check and remove
             if notification.state == 'OUTGOING':
                 logger.debug(notification.extra)
-                pm = PushMessage([notification.recipient], notification.message, data_message=json.loads(notification.extra)).send()
+                pm = PushMessage([notification.recipient], notification.message, badge=1, data_message=json.loads(notification.extra)).send()
 
                 notification.state = "SENT"
 
