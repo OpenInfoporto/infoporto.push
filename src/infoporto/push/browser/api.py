@@ -92,6 +92,9 @@ class PushQueueView(BrowserView):
 class ReadNotification(BrowserView):
 
     def __init__(self, context, request):
+        from plone.protect.interfaces import IDisableCSRFProtection
+        from zope.interface import alsoProvides
+        alsoProvides(request, IDisableCSRFProtection)
         self.context = context
         self.request = request
 
@@ -105,22 +108,30 @@ class ReadNotification(BrowserView):
         original = api.content.get(UID=document.original_doc)
         container = api.content.get(path="/".join(original.getPhysicalPath()))
 
+        logger.info('Attempt to create DMReadingConfirm in {}'.format("/".join(original.getPhysicalPath())))
+
         obj = api.content.create(
             type='DMReadingConfirm',
             title='%s-%s' % (username, document.title),
             message="Conferma di lettura da %s per il documento %s del %s" % (username, document.title, original.creation_date),
             container=container
         )
+        
+        logger.info('Object created: {}'.format("/".join(obj.getPhysicalPath())))
+
         obj.reindexObject()
 
         notifications = api.content.find(portal_type='PushMessage', 
                                          title=document.title)
 
+        logger.info('notifications found: {}'.format(notifications))
+    
         for n in notifications:
             if document.UID() == json.loads(n.getObject().extra).get('UID'):
                 n.getObject().state = 'READ'
                 n.getObject().reindexObject()
                 logger.info("Setting notification %s for document %s to READ" % (n.Title, document.Title))
                    
-        return "Read"
+        self.request.response.setHeader('Content-type', 'application/json')
+        return "{}"
 
