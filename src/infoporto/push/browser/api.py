@@ -9,22 +9,54 @@ from Products.Five.browser import BrowserView
 from plone import api
 from infoporto.push.helpers import PushDevice, PushMessage
 
+from plone.protect.interfaces import IDisableCSRFProtection
+from zope.interface import alsoProvides
+
 logger = logging.getLogger('infoporto.push')
 
 
 class DevicesView(BrowserView):
 
+    def _delete_device(self, username, platform=None):
+        registry = getUtility(IRegistry)
+        device_location = registry['infoporto.devices_location']
+        
+        container = api.content.get(path=device_location)
+        logger.info('calling delete on device of user {} on platform {}'.format(username, platform))
+
+        devices = api.content.find(portal_type='Device', owner=username, platform=platform, container=container)
+
+        logger.info('found {} devices to be deleted'.format(len(devices)))
+        for d in devices:
+            d = d.getObject()
+            if d.owner == username:
+                api.content.delete(objects=[d])
+
+        self.request.response.setHeader("Content-type", "application/json")
+        response = json.dumps(dict(message="Device deleted"))
+
+        return response
+
     def __call__(self):
         username = api.user.get_current().getUserName()
+
+        alsoProvides(self.request, IDisableCSRFProtection)
+
+        method = self.request["REQUEST_METHOD"]
 
         body = self.request.get('BODY')
         body = json.loads(body)
         token = body.get('token')
 
+        if method == 'DELETE':
+            return self._delete_device(username, body.get('platform'))
+
         logger.info('calling devices registrations %s by user %s providing token %s' % (body.get('platform'), username, token))
         device_helper = PushDevice(token, body.get('platform'), api.user.get_current())
+        logger.info("Current user %s" % api.user.get_current())
         device = device_helper.register()
 
+        self.request.response.setHeader('Content-type', 'application/json')
         try:
             message = PushMessage([token], "Welcome!", "Welcome body!")
             message.send()
@@ -70,17 +102,22 @@ class PushTestView(BrowserView):
 class PushQueueView(BrowserView):
     
     def __call__(self):
+        from plone.protect.interfaces import IDisableCSRFProtection
+        from zope.interface import alsoProvides
+        alsoProvides(self.request, IDisableCSRFProtection)
         registry = getUtility(IRegistry)
         push_locations = registry['infoporto.push_location'] or '/push/'
 
         #import pdb; pdb.set_trace()
         notifications = api.content.find(portal_type='PushMessage', state='OUTGOING')
+        logger.info('calling push dequeue. %s notifications found' % (len(notifications)))
         
         for notification in notifications:
             notification = notification.getObject()
             # TODO: check and remove
             if notification.state == 'OUTGOING':
                 logger.debug(notification.extra)
+                logger.info('sending notification %s' % notification.message)
                 pm = PushMessage([notification.recipient], notification.message, badge=1, data_message=json.loads(notification.extra)).send()
 
                 notification.state = "SENT"
@@ -92,8 +129,6 @@ class PushQueueView(BrowserView):
 class ReadNotification(BrowserView):
 
     def __init__(self, context, request):
-        from plone.protect.interfaces import IDisableCSRFProtection
-        from zope.interface import alsoProvides
         alsoProvides(request, IDisableCSRFProtection)
         self.context = context
         self.request = request
@@ -124,7 +159,6 @@ class ReadNotification(BrowserView):
         notifications = api.content.find(portal_type='PushMessage', 
                                          title=document.title)
 
-        logger.info('notifications found: {}'.format(notifications))
     
         for n in notifications:
             if document.UID() == json.loads(n.getObject().extra).get('UID'):

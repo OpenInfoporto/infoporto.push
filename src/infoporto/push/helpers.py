@@ -22,10 +22,17 @@ class PushDevice:
 
     def register(self):
         container = api.content.get(path=self.device_location)
-        api.content.delete(objects=[o.getObject() for o in api.content.find(portal_type='Device',
-                                                                            owner=self.user.id,
-                                                                            token=self.token,
-                                                                            container=container)])
+        user_devices = api.content.find(portal_type='Device', owner=self.user.id, platform=self.platform, container=container)
+        logger.debug(user_devices)
+        api.user.grant_roles(user=self.user, obj=container, roles=['Manager'])
+        for d in user_devices:
+            device = d.getObject()
+            if device.owner == self.user.id:
+                logger.info('deleting device {}'.format(device.id))
+                api.content.delete(objects=[device])
+
+        #api.content.delete(objects=[o.getObject() for o in user_device])
+
         obj = api.content.create(
             type='Device',
             title="%s device (%s)" % (self.user.id, self.platform),
@@ -33,6 +40,9 @@ class PushDevice:
             owner=self.user.id,
             platform=self.platform,
             container=container)
+
+        obj.reindexObject()
+
 
         api.content.transition(obj=obj, transition='submit')
 
@@ -46,9 +56,11 @@ class PushMessage:
         self.title = title
         self.body = body
         self.badge = badge
-        self.data_message = data_message
+        self.data_message = data_message or dict()
         self.extra_kwargs = extra_kwargs
         self.username = None
+
+        self.data_message.update(dict(click_action='FLUTTER_NOTIFICATION_CLICK'))
         
         registry = getUtility(IRegistry)
         self.push_service = FCMNotification(api_key=registry['infoporto.push_api_key'])
@@ -60,11 +72,11 @@ class PushMessage:
         logger.info(self.extra_kwargs)
 
         if not self.title:
-            result = self.push_service.notify_multiple_devices(registration_ids=self.token_list, badge=self.badge, content_available=True)
+            result = self.push_service.notify_multiple_devices(registration_ids=self.token_list, badge=self.badge, content_available=False, extra_kwargs=self.extra_kwargs, data_message=self.data_message)
         else:
             result = self.push_service.notify_multiple_devices(registration_ids=self.token_list, 
                                                                message_title=self.title, 
-                                                               message_body=self.body,
+                                                               message_body=self.title,
                                                                data_message=self.data_message,
                                                                badge=self.badge,
                                                                sound='Default',
@@ -99,5 +111,9 @@ class PushMessage:
             devices = api.content.find(portal_type='Device', owner=username, container=container)        
 
         logger.debug("Found %s devices for user %s" % (len(devices), username))
-        self.token_list = [d.getObject().token for d in devices]
+        self.token_list = list()
+        for d in devices:
+            d = d.getObject()
+            if d.owner == username: self.token_list.append(d.token)
+        #self.token_list = [d.getObject().token for d in devices]
 
